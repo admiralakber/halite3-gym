@@ -13,7 +13,17 @@ make
 
 ## Usage examples
 
-Read [gym/Makefile](gym/Makefile) for examples.
+Read [gym/Makefile](gym/Makefile) for command examples.
+
+**The Makefile and helper scripts are expected to be executed in the [gym](gym)
+working directory**
+
+Conceptually: register bots to play, evaluate, list to see scoreboard.
+
+All the information will be saved in [gym/mnt/gym.db](gym/mnt/gym.db) on the
+host.
+
+The output of the commands is JSON for easier piping into other programs.
 
 ## Helper script
 

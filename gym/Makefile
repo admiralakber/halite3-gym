@@ -5,7 +5,7 @@ run:
 	docker run --rm -it -v $(CURDIR)/mnt:/halite halite /bin/ash
 
 evaluate:
-	docker run --rm -it -v $(CURDIR)/mnt:/halite halite gym-evaluate
+	docker run --rm -it -v $(CURDIR)/mnt:/halite halite gym-evaluate -i 20
 
 list:
 	docker run --rm -it -v $(CURDIR)/mnt:/halite halite gym-list
