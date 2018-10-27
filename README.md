@@ -47,7 +47,7 @@ Unlicence. Do what you wish.
 
 ### Halite client tools
 
-[gym/hlt_client/LICENCE](MIT licence here) and [https://github.com/HaliteChallenge/Halite-III/tree/master/tools/hlt_client/hlt_client](source repository here)
+[gym/hlt_client/LICENCE](MIT licence here) and [https://github.com/HaliteChallenge/HaliteIII/tree/master/tools/hlt_client/hlt_client](source repository here)
 
 # Contributing
 
