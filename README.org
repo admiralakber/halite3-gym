@@ -42,7 +42,7 @@ storage is in the folder =/halite= in the container.
 
 * Licence
 
-*** Docker and scripts by Aqeel Akber
+*** Dockerfile and scripts by Aqeel Akber
 Unlicence. Do what you wish.
 
 *** Halite client tools
