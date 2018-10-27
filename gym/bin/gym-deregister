@@ -1,0 +1,4 @@
+#!/bin/sh
+cd /usr/src
+# first argument = name
+python3 -m hlt_client --json gym --db-path=/halite/gym.db deregister "$1"

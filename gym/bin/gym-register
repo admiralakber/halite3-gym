@@ -1,0 +1,5 @@
+#!/bin/sh
+cd /usr/src
+# first argument = name
+# second argument = command
+python3 -m hlt_client --json gym --db-path=/halite/gym.db register "$1" "$2"
