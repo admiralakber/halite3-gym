@@ -1,6 +1,6 @@
 FROM python:3-alpine
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev libstdc++ libc6-compat
 
 COPY hlt_client/requirements.txt /usr/src/hlt_client/requirements.txt
 RUN pip install -r /usr/src/hlt_client/requirements.txt
