@@ -155,18 +155,21 @@ def add_match(conn, bots, results):
     rerank_bots(conn)
 
 
-def run_matches(db_path, hlt_path, output_dir, iterations):
+def run_matches(db_path, hlt_path, output_dir, iterations, mapsize=-1, num_players=-1):
     flags = []
+    if (mapsize!=-1):
+        flags = flags + ["--width", str(mapsize), "--height", str(mapsize)]
 
     if output_dir:
         abs_output_dir = os.path.abspath(output_dir)
         os.makedirs(abs_output_dir, exist_ok=True)
-        flags = ['-i', abs_output_dir]
+        flags = flags + ['-i', abs_output_dir]
 
     for i in range(iterations):
         with connect(db_path) as conn:
-            all_bots = list_bots(conn)
-            num_players = random.choice((2, 4))
+            all_bots = list_bots(conn)            
+            if (num_players==-1):
+                num_players = random.choice((2, 4))            
             if len(all_bots) < MIN_PLAYERS:
                 output.error('Need at least {} bots registered to play.'.format(MIN_PLAYERS))
                 sys.exit(1)
@@ -287,8 +290,10 @@ def main(args):
         hlt_path = args.halite_binary
         output_dir = args.game_output_dir
         iterations = args.iterations
+        map_size = args.mapsize
+        num_players = args.num_players
 
-        run_matches(args.db_path, hlt_path, output_dir, iterations)
+        run_matches(args.db_path, hlt_path, output_dir, iterations, map_size, num_players)
 
 
 def parse_arguments(subparser):
@@ -329,6 +334,18 @@ def parse_arguments(subparser):
                                  type=int, required=False,
                                  default=10,
                                  help="Number of games to play.")
+    evaluate_parser.add_argument('-s', '--size',
+                                 dest='mapsize',
+                                 action='store',
+                                 type=int, required=False,
+                                 default=-1,
+                                 help="Size of map.")
+    evaluate_parser.add_argument('-n', '--num-players',
+                                 dest='num_players',
+                                 action='store',
+                                 type=int, required=False,
+                                 default=-1,
+                                 help="Number of players in each game.")
 
     stats_parser = gym_subparser.add_parser(STATS_MODE, help='Get stats from the gym.')
     stats_parser.add_argument('query', nargs='?', type=str,
