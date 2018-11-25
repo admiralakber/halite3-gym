@@ -53,6 +53,20 @@ def output(message, **fields):
     else:
         print(message)
 
+def output_file(message, outfile, **fields):
+    if mode() == JSON:
+        result = { "status": "success" }
+        result.update(fields)
+        message = jsonify(message)
+        if isinstance(message, dict):
+            result.update(message)
+        else:
+            result["message"] = message
+        outfile.write(format_json(result))
+        outfile.flush()
+        
+    else:
+        outfile.write(message)
 
 def warning(message, **fields):
     output(message, status="warning", **fields)
