@@ -5,12 +5,14 @@ import random
 import sqlite3
 import sys
 import subprocess
+import math
 
 import appdirs
 import trueskill
 
-from . import compare_bots, output, util
+from multiprocessing import Pool
 
+from . import compare_bots, output, util
 
 APP_NAME = 'hlt_client3'
 APP_AUTHOR = 'Halite'
@@ -155,7 +157,17 @@ def add_match(conn, bots, results):
     rerank_bots(conn)
 
 
-def run_matches(db_path, hlt_path, output_dir, iterations, mapsize=-1, num_players=-1):
+def find_match(bots, bot_ind, num_players):
+    bot_0 = bots[bot_ind]
+    del(bots[bot_ind])
+    botlist = [(bots[i], abs(random.gauss(bot_0['mu']-bots[i]['mu'], math.sqrt(bot_0['sigma']**2 + bots[i]['sigma']**2)))) for i in range(0, len(bots))];
+    botlist.sort(key=lambda x: x[1])
+    out_mus  = [bot_0['mu']]+[botlist[i][0]['mu'] for i in range(0, num_players - 1)]
+    out = [bot_0]+[botlist[i][0] for i in range(0, num_players - 1)]
+    return out
+    
+def run_matches(db_path, hlt_path, output_dir, iterations, core, mapsize=-1, n_players=-1):
+    outfile = open(output_dir+"/output_"+str(core)+".txt", "w")
     flags = []
     if (mapsize!=-1):
         flags = flags + ["--width", str(mapsize), "--height", str(mapsize)]
@@ -168,16 +180,21 @@ def run_matches(db_path, hlt_path, output_dir, iterations, mapsize=-1, num_playe
     for i in range(iterations):
         with connect(db_path) as conn:
             all_bots = list_bots(conn)            
-            if (num_players==-1):
-                num_players = random.choice((2, 4))            
+            if (n_players==-1):
+                num_players = random.choice((2, 4))
+            else:
+                num_players = n_players
             if len(all_bots) < MIN_PLAYERS:
                 output.error('Need at least {} bots registered to play.'.format(MIN_PLAYERS))
                 sys.exit(1)
             elif len(all_bots) < num_players:
                 num_players = MIN_PLAYERS
 
-            random.shuffle(all_bots)
-            bots = all_bots[:num_players]
+            #random.shuffle(all_bots)
+            bot_ind = random.randint(0, len(all_bots) - 1)
+            bots = find_match(all_bots, bot_ind, num_players)
+            random.shuffle(bots)
+            #bots = all_bots[:num_players]
 
         overrides = []
         for bot in bots:
@@ -190,12 +207,23 @@ def run_matches(db_path, hlt_path, output_dir, iterations, mapsize=-1, num_playe
         with connect(db_path) as conn:
             add_match(conn, bots, results)
 
-        output.output('Played {}/{} matches...'.format(i + 1, iterations),
+        # output.output('Played {}/{} matches...'.format(i + 1, iterations),
+        #               progress=i + 1,
+        #               iterations=iterations,
+        #               results=results,
+        #               participants=bots)
+
+        output.output('Core {} played {}/{} matches...'.format(core, i + 1, iterations))
+        output.output_file('Played {}/{} matches...'.format(i + 1, iterations), outfile,
                       progress=i + 1,
                       iterations=iterations,
                       results=results,
                       participants=bots)
-    output.output('Done playing games.', progress=iterations, iterations=iterations)
+        outfile.write("\n")
+
+    #output.output('Done playing games.', progress=iterations, iterations=iterations)
+    output.output_file('Done playing games.', outfile, progress=iterations, iterations=iterations)
+    outfile.close()
 
 
 def list_matches(conn):
@@ -292,9 +320,18 @@ def main(args):
         iterations = args.iterations
         map_size = args.mapsize
         num_players = args.num_players
+        n_cores = args.n_cores
 
-        run_matches(args.db_path, hlt_path, output_dir, iterations, map_size, num_players)
+        pool = Pool()
+        outputs = []
+        results = []
 
+        for i in range(0, n_cores):
+            outputs.append(pool.apply_async(run_matches, [args.db_path, hlt_path, output_dir, int(iterations/n_cores), i, map_size, num_players]))
+
+        for out in outputs:
+            out.get()
+        
 
 def parse_arguments(subparser):
     gym_parser = subparser.add_parser('gym', help='Train your Bot(s)!')
@@ -334,6 +371,12 @@ def parse_arguments(subparser):
                                  type=int, required=False,
                                  default=10,
                                  help="Number of games to play.")
+    evaluate_parser.add_argument('-j', '--cores',
+                                 dest='n_cores',
+                                 action='store',
+                                 type=int, required=False,
+                                 default=1,
+                                 help="Number of cores to run on.")
     evaluate_parser.add_argument('-s', '--size',
                                  dest='mapsize',
                                  action='store',
